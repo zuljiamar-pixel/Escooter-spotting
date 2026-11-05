@@ -85,6 +85,18 @@ label { display: block; margin-bottom: .8rem; font-size: .9rem; color: var(--mut
   border-radius: var(--radius); padding: .8rem 1rem; margin-bottom: 1rem; font-size: .92rem;
 }
 
+.hint.ok { background: rgba(46, 230, 166, .1); border-color: rgba(46, 230, 166, .4); }
+
+.modal {
+  position: fixed; inset: 0; z-index: 60; display: grid; place-items: center; padding: 16px;
+  background: rgba(0, 0, 0, .6);
+}
+.modal-box {
+  background: var(--card); border: 1px solid var(--border); border-radius: var(--radius);
+  padding: 1.2rem; max-width: 380px; width: 100%;
+}
+.modal-box p { margin: 0; }
+
 /* Dropzone */
 .dropzone {
   border: 2px dashed var(--border); border-radius: 20px;

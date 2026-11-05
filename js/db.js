@@ -28,12 +28,18 @@ async function tx(mode, fn) {
   });
 }
 
+// Falls IndexedDB blockiert ist (z. B. privates Fenster): Spots nur im Speicher halten.
+const memory = new Map();
+async function safe(fn, fallback) {
+  try { return await fn(); } catch { return fallback(); }
+}
+
 export const db = {
   all: async () => {
-    const list = await tx("readonly", (s) => s.getAll());
+    const list = await safe(() => tx("readonly", (s) => s.getAll()), () => [...memory.values()]);
     return list.sort((a, b) => b.createdAt - a.createdAt);
   },
-  put: (spot) => tx("readwrite", (s) => s.put(spot)),
-  remove: (id) => tx("readwrite", (s) => s.delete(id)),
-  clear: () => tx("readwrite", (s) => s.clear()),
+  put: (spot) => safe(() => tx("readwrite", (s) => s.put(spot)), () => memory.set(spot.id, spot)),
+  remove: (id) => safe(() => tx("readwrite", (s) => s.delete(id)), () => memory.delete(id)),
+  clear: () => safe(() => tx("readwrite", (s) => s.clear()), () => memory.clear()),
 };

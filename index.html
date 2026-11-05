@@ -24,6 +24,9 @@
   <main>
     <!-- SCANNEN -->
     <section id="view-scan" class="view active">
+      <div id="account-hint" class="hint ok hidden">
+        ✨ Die KI läuft über dein Claude-Konto – kein API-Key nötig.
+      </div>
       <div id="no-key-hint" class="hint hidden">
         Für die KI-Erkennung brauchst du einen Claude-API-Key.
         <button class="link" data-goto="settings">In den Einstellungen eintragen →</button>
@@ -160,6 +163,7 @@
       <h2>Einstellungen</h2>
       <div class="card">
         <h3>KI-Erkennung (Claude)</h3>
+        <p id="account-settings" class="hint ok hidden">✨ Hier läuft die KI über dein Claude-Konto. Du brauchst keinen API-Key.</p>
         <p class="muted small">Der API-Key wird nur in deinem Browser gespeichert und direkt an die Claude-API gesendet.
           Einen Key bekommst du auf <a href="https://console.anthropic.com/" target="_blank" rel="noopener">console.anthropic.com</a>.</p>
         <label>API-Key
@@ -188,6 +192,16 @@
   </main>
 
   <div id="toast" class="toast hidden"></div>
+
+  <div id="confirm" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="confirm-text">
+    <div class="modal-box">
+      <p id="confirm-text"></p>
+      <div class="btn-row">
+        <button id="confirm-ok" class="btn danger">Löschen</button>
+        <button id="confirm-cancel" class="btn ghost">Abbrechen</button>
+      </div>
+    </div>
+  </div>
 
   <script type="module" src="js/app.js"></script>
 </body>

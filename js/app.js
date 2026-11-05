@@ -1,6 +1,7 @@
 import { BRANDS, findBrandByName, findModel, normalize } from "./catalog.js";
 import { db } from "./db.js";
 import { settings, customCatalog } from "./settings.js";
+import { getAccountAI, identifyWithAccount } from "./claude-account.js";
 
 const $ = (sel) => document.querySelector(sel);
 const NEW = "__new__";
@@ -47,8 +48,29 @@ function toast(msg) {
   toast.t = setTimeout(() => el.classList.add("hidden"), 2800);
 }
 
-function updateKeyHint() {
-  $("#no-key-hint").classList.toggle("hidden", !!settings.get().apiKey);
+async function updateKeyHint() {
+  const account = await getAccountAI();
+  $("#account-hint").classList.toggle("hidden", !account);
+  $("#account-settings").classList.toggle("hidden", !account);
+  $("#no-key-hint").classList.toggle("hidden", !!account || !!settings.get().apiKey);
+}
+
+// Eigener Bestätigungsdialog (confirm() funktioniert nicht überall).
+function confirmDialog(text, okLabel = "Löschen") {
+  return new Promise((resolve) => {
+    const dlg = $("#confirm");
+    $("#confirm-text").textContent = text;
+    $("#confirm-ok").textContent = okLabel;
+    dlg.classList.remove("hidden");
+    const done = (v) => {
+      dlg.classList.add("hidden");
+      $("#confirm-ok").onclick = $("#confirm-cancel").onclick = null;
+      resolve(v);
+    };
+    $("#confirm-ok").onclick = () => done(true);
+    $("#confirm-cancel").onclick = () => done(false);
+    $("#confirm-ok").focus();
+  });
 }
 
 // ---------- Bild laden ----------
@@ -124,7 +146,8 @@ function setStatus(msg, isError = false) {
 // ---------- KI-Scan ----------
 $("#btn-analyze").addEventListener("click", async () => {
   const { apiKey, model } = settings.get();
-  if (!apiKey) {
+  const account = await getAccountAI();
+  if (!account && !apiKey) {
     toast("Bitte zuerst einen API-Key in den Einstellungen eintragen.");
     return show("settings");
   }
@@ -137,11 +160,16 @@ $("#btn-analyze").addEventListener("click", async () => {
   setStatus("🔍 KI scannt den E-Scooter … Rahmen, Lenker, Räder, Logos …");
 
   try {
-    const { identifyScooter } = await import("./ai.js");
-    const [, mediaType, data] = state.photo.full.match(/^data:(.+?);base64,(.*)$/);
-    const result = await identifyScooter({
-      apiKey, model, imageBase64: data, mediaType, catalog: getCatalog(),
-    });
+    let result;
+    if (account) {
+      result = await identifyWithAccount(account, { imageDataUrl: state.photo.full, catalog: getCatalog() });
+    } else {
+      const { identifyScooter } = await import("./ai.js");
+      const [, mediaType, data] = state.photo.full.match(/^data:(.+?);base64,(.*)$/);
+      result = await identifyScooter({
+        apiKey, model, imageBase64: data, mediaType, catalog: getCatalog(),
+      });
+    }
     state.aiResult = result;
     setStatus(null);
     showResult(result);
@@ -379,7 +407,7 @@ function renderSpots() {
       .filter(Boolean).join(" · ");
     card.querySelector(".meta").textContent = meta;
     card.querySelector('[data-act="del"]').addEventListener("click", async () => {
-      if (!confirm(`Spot "${s.brandName} ${s.model}" löschen?`)) return;
+      if (!(await confirmDialog(`Spot "${s.brandName} ${s.model}" löschen?`))) return;
       await db.remove(s.id);
       await refreshSpots();
       renderSpots();
@@ -537,12 +565,19 @@ $("#btn-save-settings").addEventListener("click", () => {
   updateKeyHint();
 });
 
-$("#btn-export").addEventListener("click", () => {
+$("#btn-export").addEventListener("click", async () => {
   const data = { version: 1, exportedAt: new Date().toISOString(), spots: state.spots, custom: customCatalog.get() };
+  const filename = `scooter-spots-${new Date().toISOString().slice(0, 10)}.json`;
   const blob = new Blob([JSON.stringify(data)], { type: "application/json" });
+  // Im Claude-Artifact laufen Downloads über die Plattform.
+  const downloads = window.claude?.use ? await window.claude.use("downloads").catch(() => null) : null;
+  if (downloads) {
+    try { await downloads.save({ filename, data: blob }); } catch (e) { if (e?.code !== "cancelled") toast("Backup konnte nicht gespeichert werden."); }
+    return;
+  }
   const a = document.createElement("a");
   a.href = URL.createObjectURL(blob);
-  a.download = `scooter-spots-${new Date().toISOString().slice(0, 10)}.json`;
+  a.download = filename;
   a.click();
   setTimeout(() => URL.revokeObjectURL(a.href), 1000);
 });
@@ -570,7 +605,7 @@ $("#import-input").addEventListener("change", async (e) => {
 });
 
 $("#btn-clear").addEventListener("click", async () => {
-  if (!confirm("Wirklich ALLE Spots löschen? Das kann nicht rückgängig gemacht werden.")) return;
+  if (!(await confirmDialog("Wirklich ALLE Spots löschen? Das kann nicht rückgängig gemacht werden.", "Alle löschen"))) return;
   await db.clear();
   await refreshSpots();
   toast("Alle Spots gelöscht");
