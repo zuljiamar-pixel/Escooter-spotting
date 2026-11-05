@@ -1,7 +1,7 @@
-import { BRANDS, findBrandByName, findModel, normalize } from "./catalog.js";
-import { db } from "./db.js";
-import { settings, customCatalog } from "./settings.js";
-import { getAccountAI, identifyWithAccount } from "./claude-account.js";
+import { BRANDS, findBrandByName, findModel, normalize } from "./catalog.js?v=7";
+import { db } from "./db.js?v=7";
+import { settings, customCatalog } from "./settings.js?v=7";
+import { getAccountAI, identifyWithAccount } from "./claude-account.js?v=7";
 
 const $ = (sel) => document.querySelector(sel);
 const NEW = "__new__";
@@ -25,6 +25,12 @@ function getCatalog() {
 }
 const brandOf = (id) => getCatalog().find((b) => b.id === id);
 const modelKey = (brandId, model) => `${brandId}::${normalize(model)}`;
+
+// "TIER" + "TIER 5" -> "TIER 5", "Xiaomi" + "Electric Scooter 4" -> "Xiaomi Electric Scooter 4"
+function fullName(brandName, model) {
+  const b = brandName.replace(/\s*\(.*?\)/, "");
+  return normalize(model).startsWith(normalize(b)) ? model : `${b} ${model}`;
+}
 
 // ---------- Navigation ----------
 function show(view) {
@@ -105,6 +111,18 @@ async function handleFile(file) {
   }
   state.editingId = null;
   startStage();
+  // Sofort scannen, wenn eine KI verfügbar ist
+  if (await aiAvailable()) runScan();
+  else showNoAI();
+}
+
+function showNoAI() {
+  $("#no-ai").classList.remove("hidden");
+  $("#btn-analyze").classList.add("hidden");
+}
+
+async function aiAvailable() {
+  return !!(settings.get().apiKey || (await getAccountAI()));
 }
 
 function startStage() {
@@ -116,6 +134,8 @@ function startStage() {
   $("#scan-actions").classList.remove("hidden");
   $("#result").classList.add("hidden");
   $("#correct-form").classList.add("hidden");
+  $("#no-ai").classList.add("hidden");
+  $("#btn-analyze").classList.remove("hidden");
   setStatus(null);
 }
 
@@ -144,27 +164,43 @@ function setStatus(msg, isError = false) {
 }
 
 // ---------- KI-Scan ----------
+const SCAN_STEPS = [
+  "🔍 Scooter wird gesucht …",
+  "📐 Rahmen und Trittbrett werden vermessen …",
+  "🛞 Räder und Federung werden geprüft …",
+  "🎛️ Lenker und Display werden analysiert …",
+  "🏷️ Logos und Schriftzüge werden gelesen …",
+  "🧠 Abgleich mit dem Katalog …",
+];
+
 $("#btn-analyze").addEventListener("click", async () => {
+  if (await aiAvailable()) runScan();
+  else showNoAI();
+});
+
+async function runScan() {
   const { apiKey, model } = settings.get();
   const account = await getAccountAI();
-  if (!account && !apiKey) {
-    toast("Bitte zuerst einen API-Key in den Einstellungen eintragen.");
-    return show("settings");
-  }
   const btn = $("#btn-analyze");
   btn.disabled = true;
+  $("#no-ai").classList.add("hidden");
   $("#scanline").classList.remove("hidden");
   $(".photo-wrap").classList.add("scanning");
   $("#result").classList.add("hidden");
   $("#correct-form").classList.add("hidden");
-  setStatus("🔍 KI scannt den E-Scooter … Rahmen, Lenker, Räder, Logos …");
+  let step = 0;
+  setStatus(SCAN_STEPS[0]);
+  const ticker = setInterval(() => {
+    step = Math.min(step + 1, SCAN_STEPS.length - 1);
+    setStatus(SCAN_STEPS[step]);
+  }, 2200);
 
   try {
     let result;
     if (account) {
       result = await identifyWithAccount(account, { imageDataUrl: state.photo.full, catalog: getCatalog() });
     } else {
-      const { identifyScooter } = await import("./ai.js");
+      const { identifyScooter } = await import("./ai.js?v=7");
       const [, mediaType, data] = state.photo.full.match(/^data:(.+?);base64,(.*)$/);
       result = await identifyScooter({
         apiKey, model, imageBase64: data, mediaType, catalog: getCatalog(),
@@ -177,11 +213,12 @@ $("#btn-analyze").addEventListener("click", async () => {
     console.error(err);
     setStatus("⚠️ " + (err.message || "Unbekannter Fehler"), true);
   } finally {
+    clearInterval(ticker);
     btn.disabled = false;
     $("#scanline").classList.add("hidden");
     $(".photo-wrap").classList.remove("scanning");
   }
-});
+}
 
 function matchToCatalog(brandName, modelName) {
   const known = (s) => s && !/^unbekannt$/i.test(s.trim());
@@ -207,7 +244,7 @@ function showResult(r) {
   }
   state.aiMatch = match;
 
-  $("#res-title").textContent = `${match.brandName} ${match.model}`;
+  $("#res-title").textContent = fullName(match.brandName, match.model);
   const type = $("#res-type");
   type.textContent = match.type === "sharing" ? "Sharing" : "Privat-Scooter";
   type.className = `pill ${match.type}`;
@@ -244,7 +281,7 @@ function showResult(r) {
     altList.forEach(({ a, m }) => {
       const chip = document.createElement("button");
       chip.className = "alt-chip";
-      chip.textContent = `${m.brandName} ${m.model} · ${Math.round(a.confidence * 100)}%`;
+      chip.textContent = `${fullName(m.brandName, m.model)} · ${Math.round(a.confidence * 100)}%`;
       chip.addEventListener("click", () => openCorrect(m));
       alts.appendChild(chip);
     });
@@ -364,7 +401,8 @@ async function saveSpot({ brandId, brandName, model, type, corrected }) {
   };
   await db.put(spot);
   await refreshSpots();
-  toast(existing ? "✔ Spot aktualisiert" : isNew ? `🎉 Neuer Scooter: ${brand.name} ${model}!` : `✔ ${brand.name} ${model} gespeichert`);
+  const label = fullName(brand.name, model);
+  toast(existing ? "✔ Spot aktualisiert" : isNew ? `🎉 Neuer Scooter: ${label}!` : `✔ ${label} gespeichert`);
   const wasEditing = !!existing;
   resetScan();
   if (wasEditing) show("spots");

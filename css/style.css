@@ -57,13 +57,14 @@ main { max-width: 1100px; margin: 0 auto; padding: 1.25rem 16px 4rem; }
   display: inline-flex; align-items: center; justify-content: center; gap: .4rem;
   padding: .65rem 1.1rem; border-radius: 10px;
   border: 1px solid var(--border); background: var(--bg2); color: var(--text);
-  font: inherit; font-weight: 500; cursor: pointer;
+  font: inherit; font-weight: 500; cursor: pointer; text-decoration: none;
 }
 .btn:hover { border-color: var(--accent); }
 .btn.primary { background: linear-gradient(135deg, var(--accent), var(--accent2)); color: #00140d; border: 0; font-weight: 700; }
 .btn.ghost { background: none; }
 .btn.danger { color: var(--danger); }
 .btn.danger:hover { border-color: var(--danger); }
+.btn.big { font-size: 1.1rem; padding: .9rem 1.4rem; }
 .btn:disabled { opacity: .5; cursor: wait; }
 .btn-row { display: flex; gap: .6rem; flex-wrap: wrap; margin-top: .75rem; }
 .link { background: none; border: 0; color: var(--accent2); cursor: pointer; font: inherit; padding: 0; text-decoration: underline; }
@@ -130,6 +131,7 @@ label { display: block; margin-bottom: .8rem; font-size: .9rem; color: var(--mut
 @keyframes scan { from { top: 0; } to { top: calc(100% - 3px); } }
 
 .status {
+  font-weight: 600;
   margin-top: 1rem; padding: .8rem 1rem; border-radius: 10px;
   background: var(--bg2); border: 1px solid var(--border);
 }

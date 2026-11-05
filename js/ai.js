@@ -1,6 +1,6 @@
 // KI-Erkennung mit der Claude-API (läuft direkt im Browser mit dem eigenen API-Key).
 import Anthropic from "https://cdn.jsdelivr.net/npm/@anthropic-ai/sdk@1.0.0/+esm";
-import { SCHEMA, systemPrompt } from "./prompt.js";
+import { SCHEMA, systemPrompt } from "./prompt.js?v=7";
 
 export async function identifyScooter({ apiKey, model, imageBase64, mediaType, catalog }) {
   const client = new Anthropic({ apiKey, dangerouslyAllowBrowser: true });

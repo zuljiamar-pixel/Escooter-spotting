@@ -7,7 +7,7 @@
   <meta name="description" content="E-Scooter fotografieren, per KI erkennen lassen und deine Sammlung aufbauen.">
   <meta name="theme-color" content="#0d1117">
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🛴</text></svg>">
-  <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="css/style.css?v=7">
 </head>
 <body>
   <header class="topbar">
@@ -28,9 +28,9 @@
         ✨ Die KI läuft über dein Claude-Konto – kein API-Key nötig.
       </div>
       <div id="no-key-hint" class="hint hidden">
-        Für die KI-Erkennung brauchst du einen Claude-API-Key.
-        <button class="link" data-goto="settings">In den Einstellungen eintragen →</button>
-        Ohne Key kannst du den Scooter trotzdem manuell auswählen.
+        🤖 Für die KI-Erkennung ohne API-Key öffne die
+        <a href="https://claude.ai/artifact/WHkGLfygLbXbcqD6pAHMQS" target="_blank" rel="noopener">Claude-Version dieser Seite</a>
+        (kostenlos mit deinem Claude-Konto).
       </div>
 
       <div id="dropzone" class="dropzone">
@@ -39,8 +39,8 @@
           <h2>E-Scooter spotten</h2>
           <p>Mach ein Foto oder lade ein Bild hoch – die KI erkennt Marke und Modell.</p>
           <div class="btn-row">
-            <label class="btn primary">
-              Foto aufnehmen
+            <label class="btn primary big">
+              📷 Scooter scannen
               <input id="camera-input" type="file" accept="image/*" capture="environment" hidden>
             </label>
             <label class="btn">
@@ -59,8 +59,16 @@
         </div>
 
         <div class="scan-panel">
+          <div id="no-ai" class="hint hidden">
+            <b>Hier ist keine KI eingerichtet.</b><br>
+            Die KI-Erkennung ohne API-Key gibt's in der Claude-Version der Seite:
+            <div class="btn-row">
+              <a class="btn primary" href="https://claude.ai/artifact/WHkGLfygLbXbcqD6pAHMQS" target="_blank" rel="noopener">🤖 Claude-Version öffnen</a>
+            </div>
+            <p class="small muted">Oder trag in den Einstellungen einen API-Key ein, oder wähle den Scooter unten manuell aus.</p>
+          </div>
           <div id="scan-actions" class="btn-row">
-            <button id="btn-analyze" class="btn primary">🤖 KI-Scan starten</button>
+            <button id="btn-analyze" class="btn primary">🔄 Nochmal scannen</button>
             <button id="btn-manual" class="btn">Manuell auswählen</button>
             <button id="btn-reset" class="btn ghost">Anderes Bild</button>
           </div>
@@ -203,6 +211,6 @@
     </div>
   </div>
 
-  <script type="module" src="js/app.js"></script>
+  <script type="module" src="js/app.js?v=7"></script>
 </body>
 </html>

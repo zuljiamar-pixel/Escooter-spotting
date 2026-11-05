@@ -1,6 +1,6 @@
 // KI über das eigene Claude-Konto – nur verfügbar, wenn die Seite als Claude-Artifact läuft.
 // Dann ist kein API-Key nötig.
-import { fullPrompt } from "./prompt.js";
+import { fullPrompt } from "./prompt.js?v=7";
 
 let samplePromise = null;
 
