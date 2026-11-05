@@ -1,0 +1,194 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>ScooterSpotter</title>
+  <meta name="description" content="E-Scooter fotografieren, per KI erkennen lassen und deine Sammlung aufbauen.">
+  <meta name="theme-color" content="#0d1117">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🛴</text></svg>">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <header class="topbar">
+    <div class="logo">🛴 <span>Scooter<b>Spotter</b></span></div>
+    <nav class="tabs" role="tablist">
+      <button class="tab active" data-view="scan">📷 Scannen</button>
+      <button class="tab" data-view="spots">⭐ Meine Spots</button>
+      <button class="tab" data-view="catalog">📚 Katalog</button>
+      <button class="tab" data-view="stats">📊 Statistik</button>
+      <button class="tab" data-view="settings">⚙️</button>
+    </nav>
+  </header>
+
+  <main>
+    <!-- SCANNEN -->
+    <section id="view-scan" class="view active">
+      <div id="no-key-hint" class="hint hidden">
+        Für die KI-Erkennung brauchst du einen Claude-API-Key.
+        <button class="link" data-goto="settings">In den Einstellungen eintragen →</button>
+        Ohne Key kannst du den Scooter trotzdem manuell auswählen.
+      </div>
+
+      <div id="dropzone" class="dropzone">
+        <div class="drop-inner">
+          <div class="big-icon">📸</div>
+          <h2>E-Scooter spotten</h2>
+          <p>Mach ein Foto oder lade ein Bild hoch – die KI erkennt Marke und Modell.</p>
+          <div class="btn-row">
+            <label class="btn primary">
+              Foto aufnehmen
+              <input id="camera-input" type="file" accept="image/*" capture="environment" hidden>
+            </label>
+            <label class="btn">
+              Bild auswählen
+              <input id="file-input" type="file" accept="image/*" hidden>
+            </label>
+          </div>
+          <p class="muted small">…oder Bild hierher ziehen</p>
+        </div>
+      </div>
+
+      <div id="scan-stage" class="scan-stage hidden">
+        <div class="photo-wrap">
+          <img id="scan-photo" alt="Dein Foto">
+          <div id="scanline" class="scanline hidden"></div>
+        </div>
+
+        <div class="scan-panel">
+          <div id="scan-actions" class="btn-row">
+            <button id="btn-analyze" class="btn primary">🤖 KI-Scan starten</button>
+            <button id="btn-manual" class="btn">Manuell auswählen</button>
+            <button id="btn-reset" class="btn ghost">Anderes Bild</button>
+          </div>
+
+          <div id="scan-status" class="status hidden"></div>
+
+          <div id="result" class="result hidden">
+            <div class="result-head">
+              <div>
+                <div class="muted small">Erkannt</div>
+                <h2 id="res-title"></h2>
+                <div id="res-type" class="pill"></div>
+              </div>
+              <div class="confidence">
+                <svg viewBox="0 0 36 36"><circle cx="18" cy="18" r="15.9" class="ring-bg"/><circle id="res-ring" cx="18" cy="18" r="15.9" class="ring"/></svg>
+                <span id="res-conf"></span>
+              </div>
+            </div>
+            <div id="res-new" class="new-badge hidden">✨ Neu in deiner Sammlung!</div>
+            <ul id="res-features" class="features"></ul>
+            <p id="res-notes" class="muted"></p>
+            <div id="res-alts" class="alts"></div>
+            <div class="btn-row">
+              <button id="btn-confirm" class="btn primary">✅ Stimmt – Spot speichern</button>
+              <button id="btn-correct" class="btn">✏️ Korrigieren</button>
+            </div>
+          </div>
+
+          <form id="correct-form" class="correct hidden">
+            <h3 id="correct-title">Scooter auswählen</h3>
+            <label>Marke
+              <select id="sel-brand"></select>
+            </label>
+            <label id="new-brand-wrap" class="hidden">Neue Marke
+              <input id="new-brand" placeholder="z. B. Joyor">
+            </label>
+            <label>Modell
+              <select id="sel-model"></select>
+            </label>
+            <label id="new-model-wrap" class="hidden">Neues Modell
+              <input id="new-model" placeholder="z. B. Y10">
+            </label>
+            <label>Ort (optional)
+              <input id="spot-place" placeholder="z. B. Hauptbahnhof">
+            </label>
+            <div class="btn-row">
+              <button type="submit" class="btn primary">💾 Spot speichern</button>
+              <button type="button" id="btn-cancel-correct" class="btn ghost">Abbrechen</button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </section>
+
+    <!-- MEINE SPOTS -->
+    <section id="view-spots" class="view">
+      <div class="section-head">
+        <h2>Meine Spots <span id="spots-count" class="muted"></span></h2>
+        <input id="spots-search" type="search" placeholder="Suchen…">
+      </div>
+      <div id="spots-grid" class="spots-grid"></div>
+      <p id="spots-empty" class="empty hidden">Noch keine Spots. Ab nach draußen und Scooter jagen! 🛴</p>
+    </section>
+
+    <!-- KATALOG -->
+    <section id="view-catalog" class="view">
+      <div class="section-head">
+        <h2>Alle E-Scooter</h2>
+        <div class="filters">
+          <input id="cat-search" type="search" placeholder="Marke oder Modell suchen…">
+          <select id="cat-filter">
+            <option value="all">Alle</option>
+            <option value="privat">Privat-Scooter</option>
+            <option value="sharing">Sharing</option>
+            <option value="spotted">Nur gespottet</option>
+            <option value="missing">Noch nicht gespottet</option>
+          </select>
+        </div>
+      </div>
+      <div id="cat-summary" class="cat-summary"></div>
+      <div id="cat-list" class="cat-list"></div>
+    </section>
+
+    <!-- STATISTIK -->
+    <section id="view-stats" class="view">
+      <h2>Statistik</h2>
+      <div id="stat-tiles" class="tiles"></div>
+      <div class="card">
+        <h3>Spots pro Marke</h3>
+        <div id="brand-bars" class="bars"></div>
+      </div>
+      <div class="card">
+        <h3>Top-Modelle</h3>
+        <ol id="top-models" class="top-models"></ol>
+      </div>
+    </section>
+
+    <!-- EINSTELLUNGEN -->
+    <section id="view-settings" class="view">
+      <h2>Einstellungen</h2>
+      <div class="card">
+        <h3>KI-Erkennung (Claude)</h3>
+        <p class="muted small">Der API-Key wird nur in deinem Browser gespeichert und direkt an die Claude-API gesendet.
+          Einen Key bekommst du auf <a href="https://console.anthropic.com/" target="_blank" rel="noopener">console.anthropic.com</a>.</p>
+        <label>API-Key
+          <input id="api-key" type="password" placeholder="sk-ant-…" autocomplete="off">
+        </label>
+        <label>KI-Modell
+          <select id="ai-model">
+            <option value="claude-opus-5-5">Claude Opus 5.5 – beste Erkennung</option>
+            <option value="claude-sonnet-5-5">Claude Sonnet 5.5 – schnell & günstiger</option>
+            <option value="claude-haiku-5-5">Claude Haiku 5.5 – am günstigsten</option>
+          </select>
+        </label>
+        <button id="btn-save-settings" class="btn primary">Speichern</button>
+        <span id="settings-saved" class="muted small hidden">✔ Gespeichert</span>
+      </div>
+      <div class="card">
+        <h3>Daten</h3>
+        <p class="muted small">Deine Spots werden lokal in diesem Browser gespeichert. Mach ab und zu ein Backup.</p>
+        <div class="btn-row">
+          <button id="btn-export" class="btn">⬇️ Backup exportieren</button>
+          <label class="btn">⬆️ Backup importieren<input id="import-input" type="file" accept="application/json" hidden></label>
+          <button id="btn-clear" class="btn danger">🗑️ Alle Spots löschen</button>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <div id="toast" class="toast hidden"></div>
+
+  <script type="module" src="js/app.js"></script>
+</body>
+</html>
