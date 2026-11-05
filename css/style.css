@@ -223,9 +223,25 @@ label { display: block; margin-bottom: .8rem; font-size: .9rem; color: var(--mut
   max-width: calc(100vw - 32px);
 }
 
+.ti { margin-right: .35rem; }
+
+/* Handy: Tabs als Leiste unten */
+@media (max-width: 760px) {
+  .topbar { backdrop-filter: none; background: var(--bg); }
+  .tabs {
+    position: fixed; left: 0; right: 0; bottom: 0; z-index: 20;
+    display: grid; grid-template-columns: repeat(5, 1fr); gap: 0;
+    background: rgba(13, 17, 23, .97); border-top: 1px solid var(--border);
+    padding: .3rem .2rem calc(.3rem + env(safe-area-inset-bottom));
+  }
+  .tab { display: flex; flex-direction: column; align-items: center; gap: .1rem; padding: .35rem .1rem; border-radius: 10px; font-size: .68rem; }
+  .tab.active { background: rgba(46, 230, 166, .15); color: var(--accent); }
+  .ti { margin: 0; font-size: 1.3rem; }
+  main { padding-bottom: 6rem; }
+  .toast { bottom: 5.5rem; }
+}
+
 @media (max-width: 600px) {
-  .topbar { gap: .4rem; }
-  .tab { padding: .45rem .6rem; font-size: .9rem; }
   .section-head input, .section-head select { min-width: 0; width: 100%; }
   .filters { width: 100%; }
 }
